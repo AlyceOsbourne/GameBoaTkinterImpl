@@ -5,57 +5,85 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
 
-from src.system.config import gat_value, get_d, set_value, sections, section_options, option_type
+from src.system.config import gat_value, get_d, set_value, sections, section_options, option_type, save_config
 from src.system.event_handler import EventHandler
 class SettingsWindow(Toplevel):
     def __init__(self, master):
         super().__init__(master)
         self.title('Settings')
-        self.resizable(False, False)
+        self.geometry('500x500')
         self.protocol('WM_DELETE_WINDOW', self.destroy)
         self.grab_set()
         self.focus()
-
         self.tabs = ttk.Notebook(self)
+        self.tabs.pack(fill=BOTH, expand=True)
+        self.make_sections()
+        self.tabs.pack()
+        Button(self, text='Save', command=self.save).pack(side=LEFT, fill=X, expand=True)
+        Button(self, text='Close', command=self.destroy).pack(side=RIGHT, fill=X, expand=True)
+
+    def make_sections(self):
         for section in sections():
             frame = Frame(self.tabs)
-            self.tabs.add(frame, text=section)
-            for key in section_options(section):
-                if option_type(section, key) == bool:
-                    var = BooleanVar(frame, value=get_d(section, key))
-                    val = Checkbutton(frame, text=key, variable=var, command=lambda: set_value(section, key, var.get()))
-                elif option_type(section, key) == str:
-                    if section == "paths":
-                        var = StringVar(frame, value=get_d(section, key))
-                        Label(frame, text=key).pack(anchor=W)
-                        Entry(frame, textvariable=var).pack(anchor=W)
-                        val = Button(frame, text='Browse',
-                                     command=lambda: set_value(section, key, filedialog.askdirectory()))
-                    else:
-                        var = StringVar(frame, value=get_d(section, key))
-                        val = Entry(frame, textvariable=var)
-                elif option_type(section, key) == int:
-                    var = IntVar(frame, value=get_d(section, key))
-                    Label(frame, text=key).pack(anchor=W)
-                    val = Spinbox(frame, from_=0, to=100, textvariable=var)
-                elif option_type(section, key) == float:
-                    var = DoubleVar(frame, value=get_d(section, key))
-                    Label(frame, text=key).pack(anchor=W)
-                    val = Spinbox(frame, from_=0, to=100, increment=0.1, textvariable=var)
-                else:
-                    raise TypeError(f'Unknown type {option_type(section, key)}')
-                setattr(self, f'{section}_{key}', val)
-                val.pack(anchor=W)
-        self.tabs.pack()
+            frame.pack(fill=BOTH, expand=True)
+            self.tabs.add(frame, text=section, padding=10)
+            self.make_section_tab(frame, section)
 
-        Button(self, text='Close', command=self.destroy).pack()
-        Button(self, text='Save', command=self.save).pack()
+    def make_section_tab(self, frame, section):
+        for i, key in enumerate(section_options(section)):
+            section_label = Label(frame, text=key)
+            section_label.grid(row=i, column=0, sticky=W)
+            opt_type = option_type(section, key)
+            if opt_type == str:
+                value = StringVar()
+                value.set(gat_value(section, key))
+                value.trace('w', lambda *args: set_value(section, key, value.get()))
+                entry = Entry(frame, textvariable=value)
+                entry.grid(row=i, column=1, sticky=W)
+                if section in [
+                    'paths'
+                ]:
+                    Button(frame, text='Browse', command=lambda: self.browse(section, key, entry)).grid(row=i, column=2, sticky=W)
+            elif opt_type == int:
+                value = IntVar()
+                value.set(gat_value(section, key))
+                value.trace('w', lambda *args: set_value(section, key, value.get()))
+                entry = Entry(frame, textvariable=value)
+                entry.grid(row=i, column=1, sticky=W)
+            elif opt_type == float:
+                value = DoubleVar()
+                value.set(gat_value(section, key))
+                value.trace('w', lambda *args: set_value(section, key, value.get()))
+                entry = Entry(frame, textvariable=value)
+                entry.grid(row=i, column=1, sticky=W)
+            elif opt_type == bool:
+                value = BooleanVar()
+                value.set(gat_value(section, key))
+                value.trace('w', lambda *args: set_value(section, key, value.get()))
+                entry = Checkbutton(frame, variable=value)
+                entry.grid(row=i, column=1, sticky=W)
+            else:
+                raise ValueError(f'Unknown option type {opt_type}')
+            setattr(self, f'{section}_{key}', value)
+            # add spacer
+            Label(frame, text=' ').grid(row=i, column=1, sticky=W)
+
+
 
     def save(self):
         for section in sections():
             for key in section_options(section):
                 set_value(section, key, getattr(self, f'{section}_{key}').get())
+        save_config()
         self.destroy()
+
+    def browse(self, section, key, entry):
+        path = filedialog.askdirectory()
+        if path:
+            entry.delete(0, END)
+            entry.insert(0, path)
+            set_value(section, key, path)
+
 
 
 @EventHandler.subscriber("OpenSettings")

@@ -1,6 +1,8 @@
 import configparser
 import pathlib
 
+from src.system import EventHandler
+
 config_parser = configparser.ConfigParser()
 
 root_path = pathlib.Path(__file__).parent.parent.parent.absolute()
@@ -26,7 +28,7 @@ defaults = {
     'developer': {}
 }
 
-
+@EventHandler.subscriber('Load Config')
 def load_config():
     config_parser.read_dict({
         section: {
@@ -78,7 +80,10 @@ def section_options(section):
 def option_type(section, key):
     return defaults[section][key][1]
 
-load_config()
 
+def save_config():
+    config_parser.write(open(config_path, 'w'))
+
+load_config()
 
 
