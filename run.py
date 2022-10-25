@@ -1,4 +1,4 @@
-from gui.main_window import MainWindow
+from src.gui.main_window import MainWindow
 
 main_window = MainWindow()
 
