@@ -43,24 +43,22 @@ def load_config():
         path.mkdir(exist_ok=True)
     config_parser.write(open(config_path, 'w'))
 
-
-def gat_value(section, key):
+def get_value(section, key):
     if section not in config_parser:
         raise KeyError(f'No section {section} in config')
     if key not in config_parser[section]:
         raise KeyError(f'No key {key} in section {section}')
-    return config_parser[section][key]
-
-def get_d(section, key):
-    type = defaults[section][key][1]
-    if type == str:
-        return gat_value(section, key)
-    if type == int:
-        return int(gat_value(section, key))
-    if type == float:
-        return float(gat_value(section, key))
-    if type == bool:
-        return gat_value(section, key).lower() == 'true'
+    opt_type = option_type(section, key)
+    if opt_type == str:
+        return config_parser[section][key]
+    elif opt_type == int:
+        return config_parser[section].getint(key)
+    elif opt_type == float:
+        return config_parser[section].getfloat(key)
+    elif opt_type == bool:
+        return config_parser[section].getboolean(key)
+    else:
+        raise TypeError(f'Unknown option type {opt_type}')
 
 def set_value(section, key, value):
     if section not in config_parser:
@@ -69,7 +67,7 @@ def set_value(section, key, value):
         raise KeyError(f'No key {key} in section {section}')
     if type(value) != defaults[section][key][1]:
         raise TypeError(f'Value {value} is not of type {defaults[section][key][1]}')
-    config_parser[section][key] = value
+    config_parser[section][key] = str(value)
 
 def sections():
     return config_parser.sections()
@@ -79,7 +77,6 @@ def section_options(section):
 
 def option_type(section, key):
     return defaults[section][key][1]
-
 
 def save_config():
     config_parser.write(open(config_path, 'w'))
