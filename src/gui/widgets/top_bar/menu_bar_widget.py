@@ -20,7 +20,7 @@ class MenuBarWidget(Frame):
         menubar.add_cascade(label="File", menu=file_menu)
 
         edit_menu = Menu(menubar, tearoff=0)
-        edit_menu.add_command(label="Settings", command=lambda: EventHandler.publish('OpenSettings'))
+        edit_menu.add_command(label="Settings", command=lambda: EventHandler.publish('OpenSettings', self.parent))
         menubar.add_cascade(label="Edit", menu=edit_menu)
 
         help_menu = Menu(menubar, tearoff=0)

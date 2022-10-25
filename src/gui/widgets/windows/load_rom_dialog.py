@@ -6,7 +6,7 @@ from src.system.config import config_parser
 @EventHandler.subscriber('Load Rom')
 def load_rom():
     file = filedialog.askopenfilename(
-        initialdir=config_parser.get('paths', 'roms'),
+        initialdir=config_parser.gat_value('paths', 'roms'),
         title="Select rom file",
         filetypes=(
             ("Gameboy", "*.gb"),
